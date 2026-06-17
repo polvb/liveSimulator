@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Ecosystem - Personalidades v3</title>
+    <title>Quantum Ecosystem - Apocalypse Update v4</title>
     <style>
         * {
             box-sizing: border-box;
@@ -110,6 +110,7 @@
             padding: 16px;
             font-size: 13px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 6;
         }
         #menu-opciones h3 { margin-bottom: 10px; font-size: 14px; color: #00ffcc; border-bottom: 1px solid rgba(0,255,204,0.1); padding-bottom: 4px;}
         .hud-counter { margin: 6px 0; font-weight: 600; color: #e2e8f0; }
@@ -121,7 +122,6 @@
             cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.2s;
         }
         .menu-btn:hover { background: rgba(0, 255, 204, 0.25); border-color: #00ffcc; }
-        .btn-full { grid-column: span 2; }
 
         #panel-criatura {
             position: absolute;
@@ -135,6 +135,7 @@
             padding: 16px;
             font-size: 13px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 6;
         }
         #panel-criatura h3 { color: #00ffcc; margin-bottom: 8px; font-size: 15px; }
         #panel-criatura div { margin: 5px 0; color: #cbd5e1; display: flex; justify-content: space-between;}
@@ -147,6 +148,7 @@
             color: #ff4757;
             font-weight: 800;
             font-size: 20px;
+            z-index: 5;
         }
     </style>
 </head>
@@ -208,10 +210,12 @@
 
     let currentState = "MENU";
     let paused = false;
+    let isPurging = false; // Flag para el cataclismo láser
+    let purgeY = 700;      // Coordenada Y actual del láser de limpieza
     let showGrid = false;
     let showMenu = false;
     let selectedCreature = null;
-    let gameTime = 0; // Temporizador en segundos
+    let gameTime = 0;
 
     let creatures = [];
     let bushes = [];
@@ -226,12 +230,12 @@
         bushes = [];
         creatures = [];
         paused = false;
+        isPurging = false;
         gameTime = 0;
         selectedCreature = null;
         document.getElementById("pausa-indicator").classList.add("hidden");
         document.getElementById("timer-display").classList.remove("hidden");
 
-        // Generar Lago Central
         let wcx = Math.floor(COLS / 2);
         let wcy = Math.floor(ROWS / 2);
         for(let x=0; x<COLS; x++) {
@@ -307,7 +311,6 @@
         }
 
         update(dt, newCreatures) {
-            // REQUISITO: Disminución exacta a 1 punto por segundo
             this.hunger -= 1.0 * dt;
             this.thirst -= 1.0 * dt;
 
@@ -324,12 +327,10 @@
         }
 
         decideAndMove(newCreatures) {
-            // Si está al lado del agua y tiene sed, bebe automáticamente
             if(this.thirst < 100 && this.isAdjacentToWater()) {
                 this.thirst = Math.min(100, this.thirst + 15);
                 return;
             }
-            // Si está en un arbusto y tiene hambre, come automáticamente
             let bushHere = bushes.find(b => b.x === this.x && b.y === this.y);
             if(bushHere && bushHere.apples > 0 && this.hunger < 100) {
                 bushHere.apples--;
@@ -338,33 +339,49 @@
                 return;
             }
 
+            // NUEVO COMPORTAMIENTO GLOBAL: Si se cruzan o están al lado de otra criatura compatible, intentan aparearse sin importar personalidad
+            if(this.hunger > 70 && this.thirst > 70) {
+                for(let c of creatures) {
+                    if(c !== this && c.gender !== this.gender && c.hunger > 70 && c.thirst > 70) {
+                        // Comprobar si están cruzándose (distancia adyacente <= 1)
+                        if(Math.abs(c.x - this.x) <= 1 && Math.abs(c.y - this.y) <= 1) {
+                            if(Math.random() < 0.15) { // Probabilidad casual al encontrarse
+                                let hijos = Math.floor(Math.random()*2) + 1;
+                                for(let h=0; h<hijos; h++) {
+                                    newCreatures.push(new Creature(this.x, this.y));
+                                }
+                                this.hunger = 65; this.thirst = 65;
+                                c.hunger = 65; c.thirst = 65;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             let target = null;
 
-            // REQUISITO: Si algún medidor es INFERIOR A 30, prioridad máxima IR al recurso correspondiente
             if(this.thirst < 30 || (this.personality === "Obsesivo" && this.thirst < 70)) {
                 target = this.findNearestTile(waterBorders);
             } 
             else if(this.hunger < 30 || (this.personality === "Obsesivo" && this.hunger < 70)) {
                 target = this.findNearestTile(bushes.filter(b => b.apples > 0));
             }
-            // REQUISITO: Si NO están < 30 (o < 70 para obsesivos), actúan según su PERSONALIDAD
             else {
                 if(this.personality === "Tranquilo") {
-                    return; // No se mueve, se queda quieto
+                    return; 
                 }
                 else if(this.personality === "Juguetón") {
-                    // Se mueve completamente al azar de forma muy activa
                     target = {
                         x: this.x + (Math.floor(Math.random()*5) - 2),
                         y: this.y + (Math.floor(Math.random()*5) - 2)
                     };
                 }
                 else if(this.personality === "Romántico") {
-                    // Busca activamente pareja del género opuesto dentro de su visión
                     let parejaIdeal = null;
                     let minDist = Infinity;
                     for(let c of creatures) {
-                        if(c !== this && c.gender !== this.gender && c.personality === "Romántico" && c.hunger > 50 && c.thirst > 50) {
+                        if(c !== this && c.gender !== this.gender && c.hunger > 50 && c.thirst > 50) {
                             let d = Math.hypot(c.x - this.x, c.y - this.y);
                             if(d <= this.vision && d < minDist) {
                                 minDist = d;
@@ -374,22 +391,10 @@
                     }
                     if(parejaIdeal) {
                         target = {x: parejaIdeal.x, y: parejaIdeal.y};
-                        // Si se alcanzan, se reproducen con éxito
-                        if(Math.abs(parejaIdeal.x - this.x) <= 1 && Math.abs(parejaIdeal.y - this.y) <= 1) {
-                            if(Math.random() < 0.3) { // 30% Probabilidad por tick de contacto
-                                let hijos = Math.floor(Math.random()*2) + 1;
-                                for(let h=0; h<hijos; h++) {
-                                    newCreatures.push(new Creature(this.x, this.y));
-                                }
-                                this.hunger = 70; this.thirst = 70;
-                                parejaIdeal.hunger = 70; parejaIdeal.thirst = 70;
-                            }
-                        }
                     }
                 }
             }
 
-            // Procesar el paso físico evitando entrar al agua
             let nextX = this.x;
             let nextY = this.y;
 
@@ -494,9 +499,8 @@
         return `TIEMPO: ${mins}:${secs}`;
     }
 
-    // INTERACCIONES
     window.addEventListener("keydown", (e) => {
-        if(currentState !== "GAME") return;
+        if(currentState !== "GAME" || isPurging) return;
         if(e.key.toLowerCase() === 'p') {
             paused = !paused;
             document.getElementById("pausa-indicator").classList.toggle("hidden", !paused);
@@ -509,7 +513,7 @@
     });
 
     canvas.addEventListener("mousedown", (e) => {
-        if(currentState !== "GAME") return;
+        if(currentState !== "GAME" || isPurging) return;
         let rect = canvas.getBoundingClientRect();
         let cx = Math.floor((e.clientX - rect.left) / GRID_SIZE);
         let cy = Math.floor((e.clientY - rect.top) / GRID_SIZE);
@@ -547,8 +551,37 @@
         lastTime = now;
 
         if(currentState === "GAME") {
-            if(!paused) {
-                gameTime += dt; // REQUISITO: Temporizador corre y se pausa con P
+            
+            // DISPARADOR REQUISITO: Si supera las 10,000 criaturas, se inicia la purga láser de abajo hacia arriba
+            if(creatures.length > 10000 && !isPurging) {
+                isPurging = true;
+                purgeY = canvas.height; // Comienza abajo
+            }
+
+            if(isPurging) {
+                // Avanzar la barra láser hacia arriba velozmente
+                purgeY -= 400 * dt; 
+
+                // Filtrar criaturas que se encuentren bajo la línea láser actual
+                creatures = creatures.filter(c => {
+                    let py = c.y * GRID_SIZE + GRID_SIZE / 2;
+                    if (py >= purgeY) {
+                        // CONDICIÓN: Medidor < 40 o Personalidad Romántica
+                        if (c.hunger < 40 || c.thirst < 40 || c.personality === "Romántico") {
+                            return false; // Eliminar
+                        }
+                    }
+                    return true;
+                });
+
+                // Si llega al techo superior, finaliza el cataclismo de limpieza
+                if(purgeY <= 0) {
+                    isPurging = false;
+                }
+            } 
+            else if(!paused) {
+                // Flujo normal de simulación si no se está limpiando o pausando
+                gameTime += dt;
                 document.getElementById("timer-display").innerText = formatearTiempo(gameTime);
 
                 let newCreatures = [];
@@ -565,8 +598,9 @@
                 }
             }
 
-            // RENDERING
+            // --- RENDERING ---
             ctx.fillStyle = "#04060a"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
             ctx.fillStyle = "rgba(10, 35, 70, 0.6)";
             waterZones.forEach(s => {
                 let [x,y] = s.split(',').map(Number);
@@ -575,6 +609,28 @@
 
             bushes.forEach(b => b.draw());
             creatures.forEach(c => c.draw());
+
+            // Renderizar la barra láser destructora en pantalla si la purga está activa
+            if(isPurging) {
+                ctx.strokeStyle = "rgba(255, 0, 85, 0.8)";
+                ctx.lineWidth = 4;
+                ctx.shadowColor = "#ff0055";
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.moveTo(0, purgeY);
+                ctx.lineTo(canvas.width, purgeY);
+                ctx.stroke();
+                
+                // Capa translúcida roja de peligro debajo del láser
+                ctx.fillStyle = "rgba(255, 0, 50, 0.06)";
+                ctx.fillRect(0, purgeY, canvas.width, canvas.height - purgeY);
+                ctx.shadowBlur = 0;
+
+                // Texto HUD de Emergencia
+                ctx.fillStyle = "#ff0055";
+                ctx.font = "bold 16px Segoe UI";
+                ctx.fillText("// PROTOCOLO DE PURGA DETECTADO: OPTIMIZANDO ECOSISTEMA", 300, canvas.height - 30);
+            }
         }
         requestAnimationFrame(loop);
     }
