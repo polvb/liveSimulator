@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú de Juego</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #0f0f0f;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #141414;
+            padding: 50px 40px;
+            border-radius: 10px;
+            border: 1px solid #285028;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
+            width: 400px;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #64dc64;
+            margin-bottom: 40px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(100, 220, 100, 0.3);
+            letter-spacing: 1px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            margin: 12px 0;
+            background-color: #285028;
+            border: 2px solid #fff;
+            border-radius: 6px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            background-color: #3c783c;
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(100, 220, 100, 0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="menu-container">
+        <h1>MENÚ PRINCIPAL</h1>
+        
+        <button class="btn" onclick="jugar()">JUGAR</button>
+        
+        <button class="btn" onclick="mostrarOpciones()">OPCIONES</button>
+        
+        <button class="btn" onclick="salir()">SALIR</button>
+    </div>
+
+    <script>
+        function jugar() {
+            alert("Iniciando el juego...");
+            // Aquí puedes redirigir o activar tu simulación
+        }
+
+        function mostrarOpciones() {
+            alert("Abriendo el menú de opciones...");
+        }
+
+        function salir() {
+            alert("Saliendo de la aplicación.");
+            window.close();
+        }
+    </script>
+
+</body>
+</html>
