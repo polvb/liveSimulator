@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Ecosystem - Apocalypse Update v4</title>
+    <title>Quantum Ecosystem - Custom Menu v6</title>
     <style>
         * {
             box-sizing: border-box;
@@ -102,8 +102,8 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            width: 250px;
-            background: rgba(10, 15, 24, 0.75);
+            width: 260px;
+            background: rgba(10, 15, 24, 0.8);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(0, 255, 204, 0.25);
             border-radius: 12px;
@@ -122,6 +122,42 @@
             cursor: pointer; font-weight: bold; font-size: 11px; transition: all 0.2s;
         }
         .menu-btn:hover { background: rgba(0, 255, 204, 0.25); border-color: #00ffcc; }
+
+        /* Estilos inputs personalizados */
+        .custom-input-group {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+        .custom-input {
+            width: 65%;
+            background: rgba(4, 6, 10, 0.6);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            border-radius: 6px;
+            color: #fff;
+            padding: 5px 8px;
+            font-weight: bold;
+            font-size: 12px;
+            outline: none;
+        }
+        .custom-input:focus {
+            border-color: #00ffcc;
+        }
+        .btn-apply {
+            width: 35%;
+            padding: 5px;
+            background: #133a34;
+            border: 1px solid #00ffcc;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-apply:hover {
+            background: #00ffcc;
+            color: #04060a;
+        }
 
         #panel-criatura {
             position: absolute;
@@ -156,7 +192,7 @@
 
 <div id="container">
     <div id="screen-menu" class="screen">
-        <h1>QUANTUM ECOSYSTEM</h1>
+        <h1>CREATURARES LIFE SIMULATOR</h1>
         <div class="btn" onclick="cambiarEstado('GAME')">JUGAR</div>
         <div class="btn" onclick="cambiarEstado('OPTIONS')">OPCIONES</div>
         <div class="btn" onclick="window.close()">SALIR</div>
@@ -177,15 +213,25 @@
 
     <div id="menu-opciones" class="hidden">
         <h3>CONFIGURACIÓN GLOBAL</h3>
+        
         <div class="hud-counter" id="count-label">Criaturas: --</div>
         <div class="grid-buttons">
             <button class="menu-btn" onclick="ajustarCriaturas(50)">+50</button>
             <button class="menu-btn" onclick="ajustarCriaturas(-50)">-50</button>
         </div>
+        <div class="custom-input-group">
+            <input type="number" id="input-creatures" class="custom-input" placeholder="Cant. exacta..." min="0">
+            <button class="btn-apply" onclick="aplicarCriaturasExactas()">Aplicar</button>
+        </div>
+
         <div class="hud-counter" id="bush-label">Arbustos: --</div>
         <div class="grid-buttons">
             <button class="menu-btn" onclick="ajustarArbustos(5)">+5</button>
             <button class="menu-btn" onclick="ajustarArbustos(-5)">-5</button>
+        </div>
+        <div class="custom-input-group">
+            <input type="number" id="input-bushes" class="custom-input" placeholder="Cant. exacta..." min="0">
+            <button class="btn-apply" onclick="aplicarArbustosExactas()">Aplicar</button>
         </div>
     </div>
 
@@ -210,8 +256,8 @@
 
     let currentState = "MENU";
     let paused = false;
-    let isPurging = false; // Flag para el cataclismo láser
-    let purgeY = 700;      // Coordenada Y actual del láser de limpieza
+    let isPurging = false;
+    let purgeY = 700;
     let showGrid = false;
     let showMenu = false;
     let selectedCreature = null;
@@ -248,7 +294,7 @@
         calcularBordesAgua();
 
         for(let i=0; i<15; i++) generarUnArbusto();
-        ajustarCriaturas(30);
+        ajustarCriaturas(40);
     }
 
     function calcularBordesAgua() {
@@ -328,30 +374,29 @@
 
         decideAndMove(newCreatures) {
             if(this.thirst < 100 && this.isAdjacentToWater()) {
-                this.thirst = Math.min(100, this.thirst + 15);
-                return;
+                this.thirst = Math.min(100, this.thirst + 20);
+                if (this.hunger > 30) return; 
             }
+            
             let bushHere = bushes.find(b => b.x === this.x && b.y === this.y);
             if(bushHere && bushHere.apples > 0 && this.hunger < 100) {
                 bushHere.apples--;
                 if(bushHere.apples === 0) bushHere.cooldown = 10;
                 this.hunger = 100;
-                return;
+                if (this.thirst > 30) return; 
             }
 
-            // NUEVO COMPORTAMIENTO GLOBAL: Si se cruzan o están al lado de otra criatura compatible, intentan aparearse sin importar personalidad
             if(this.hunger > 70 && this.thirst > 70) {
                 for(let c of creatures) {
                     if(c !== this && c.gender !== this.gender && c.hunger > 70 && c.thirst > 70) {
-                        // Comprobar si están cruzándose (distancia adyacente <= 1)
                         if(Math.abs(c.x - this.x) <= 1 && Math.abs(c.y - this.y) <= 1) {
-                            if(Math.random() < 0.15) { // Probabilidad casual al encontrarse
+                            if(Math.random() < 0.12) {
                                 let hijos = Math.floor(Math.random()*2) + 1;
                                 for(let h=0; h<hijos; h++) {
                                     newCreatures.push(new Creature(this.x, this.y));
                                 }
-                                this.hunger = 65; this.thirst = 65;
-                                c.hunger = 65; c.thirst = 65;
+                                this.hunger = 60; this.thirst = 60;
+                                c.hunger = 60; c.thirst = 60;
                                 break;
                             }
                         }
@@ -361,10 +406,20 @@
 
             let target = null;
 
-            if(this.thirst < 30 || (this.personality === "Obsesivo" && this.thirst < 70)) {
+            let necesitaAguaUrgent = this.thirst < 30 || (this.personality === "Obsesivo" && this.thirst < 70);
+            let necesitaComidaUrgent = this.hunger < 30 || (this.personality === "Obsesivo" && this.hunger < 70);
+
+            if (necesitaAguaUrgent && necesitaComidaUrgent) {
+                if (this.thirst <= this.hunger) {
+                    target = this.findNearestTile(waterBorders);
+                } else {
+                    target = this.findNearestTile(bushes.filter(b => b.apples > 0));
+                }
+            } 
+            else if (necesitaAguaUrgent) {
                 target = this.findNearestTile(waterBorders);
             } 
-            else if(this.hunger < 30 || (this.personality === "Obsesivo" && this.hunger < 70)) {
+            else if (necesitaComidaUrgent) {
                 target = this.findNearestTile(bushes.filter(b => b.apples > 0));
             }
             else {
@@ -381,7 +436,7 @@
                     let parejaIdeal = null;
                     let minDist = Infinity;
                     for(let c of creatures) {
-                        if(c !== this && c.gender !== this.gender && c.hunger > 50 && c.thirst > 50) {
+                        if(c !== this && c.gender !== this.gender && c.hunger > 40 && c.thirst > 40) {
                             let d = Math.hypot(c.x - this.x, c.y - this.y);
                             if(d <= this.vision && d < minDist) {
                                 minDist = d;
@@ -464,6 +519,25 @@
         else if(estado === "GAME") initSimulation();
     }
 
+    // NUEVAS FUNCIONES DE ENTRADA PERSONALIZADA
+    function aplicarCriaturasExactas() {
+        let val = parseInt(document.getElementById("input-creatures").value);
+        if(!isNaN(val) && val >= 0) {
+            let diff = val - creatures.length;
+            ajustarCriaturas(diff);
+            document.getElementById("input-creatures").value = ""; // Limpiar input
+        }
+    }
+
+    function aplicarArbustosExactas() {
+        let val = parseInt(document.getElementById("input-bushes").value);
+        if(!isNaN(val) && val >= 0) {
+            let diff = val - bushes.length;
+            ajustarArbustos(diff);
+            document.getElementById("input-bushes").value = ""; // Limpiar input
+        }
+    }
+
     function ajustarCriaturas(cantidad) {
         let target = Math.max(0, creatures.length + cantidad);
         while(creatures.length < target) {
@@ -500,6 +574,9 @@
     }
 
     window.addEventListener("keydown", (e) => {
+        // Bloquear atajos globales si se está escribiendo en los inputs
+        if(document.activeElement.tagName === "INPUT") return;
+
         if(currentState !== "GAME" || isPurging) return;
         if(e.key.toLowerCase() === 'p') {
             paused = !paused;
@@ -552,35 +629,25 @@
 
         if(currentState === "GAME") {
             
-            // DISPARADOR REQUISITO: Si supera las 10,000 criaturas, se inicia la purga láser de abajo hacia arriba
             if(creatures.length > 10000 && !isPurging) {
                 isPurging = true;
-                purgeY = canvas.height; // Comienza abajo
+                purgeY = canvas.height;
             }
 
             if(isPurging) {
-                // Avanzar la barra láser hacia arriba velozmente
-                purgeY -= 400 * dt; 
-
-                // Filtrar criaturas que se encuentren bajo la línea láser actual
+                purgeY -= 450 * dt; 
                 creatures = creatures.filter(c => {
                     let py = c.y * GRID_SIZE + GRID_SIZE / 2;
                     if (py >= purgeY) {
-                        // CONDICIÓN: Medidor < 40 o Personalidad Romántica
                         if (c.hunger < 40 || c.thirst < 40 || c.personality === "Romántico") {
-                            return false; // Eliminar
+                            return false;
                         }
                     }
                     return true;
                 });
-
-                // Si llega al techo superior, finaliza el cataclismo de limpieza
-                if(purgeY <= 0) {
-                    isPurging = false;
-                }
+                if(purgeY <= 0) isPurging = false;
             } 
             else if(!paused) {
-                // Flujo normal de simulación si no se está limpiando o pausando
                 gameTime += dt;
                 document.getElementById("timer-display").innerText = formatearTiempo(gameTime);
 
@@ -598,7 +665,7 @@
                 }
             }
 
-            // --- RENDERING ---
+            // RENDERING
             ctx.fillStyle = "#04060a"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             ctx.fillStyle = "rgba(10, 35, 70, 0.6)";
@@ -610,23 +677,17 @@
             bushes.forEach(b => b.draw());
             creatures.forEach(c => c.draw());
 
-            // Renderizar la barra láser destructora en pantalla si la purga está activa
             if(isPurging) {
                 ctx.strokeStyle = "rgba(255, 0, 85, 0.8)";
                 ctx.lineWidth = 4;
                 ctx.shadowColor = "#ff0055";
                 ctx.shadowBlur = 15;
-                ctx.beginPath();
-                ctx.moveTo(0, purgeY);
-                ctx.lineTo(canvas.width, purgeY);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, purgeY); ctx.lineTo(canvas.width, purgeY); ctx.stroke();
                 
-                // Capa translúcida roja de peligro debajo del láser
                 ctx.fillStyle = "rgba(255, 0, 50, 0.06)";
                 ctx.fillRect(0, purgeY, canvas.width, canvas.height - purgeY);
                 ctx.shadowBlur = 0;
 
-                // Texto HUD de Emergencia
                 ctx.fillStyle = "#ff0055";
                 ctx.font = "bold 16px Segoe UI";
                 ctx.fillText("// PROTOCOLO DE PURGA DETECTADO: OPTIMIZANDO ECOSISTEMA", 300, canvas.height - 30);
