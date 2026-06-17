@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Ecosystem - Custom Menu v6</title>
+    <title>Quantum Ecosystem - Advanced Stats v7</title>
     <style>
         * {
             box-sizing: border-box;
@@ -102,8 +102,8 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            width: 260px;
-            background: rgba(10, 15, 24, 0.8);
+            width: 280px;
+            background: rgba(10, 15, 24, 0.85);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(0, 255, 204, 0.25);
             border-radius: 12px;
@@ -111,11 +111,14 @@
             font-size: 13px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
             z-index: 6;
+            max-height: 660px;
+            overflow-y: auto;
         }
-        #menu-opciones h3 { margin-bottom: 10px; font-size: 14px; color: #00ffcc; border-bottom: 1px solid rgba(0,255,204,0.1); padding-bottom: 4px;}
+        #menu-opciones h3 { margin-top: 10px; margin-bottom: 8px; font-size: 13px; color: #00ffcc; border-bottom: 1px solid rgba(0,255,204,0.1); padding-bottom: 2px;}
+        #menu-opciones h3:first-of-type { margin-top: 0; }
         .hud-counter { margin: 6px 0; font-weight: 600; color: #e2e8f0; }
         
-        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
+        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
         .menu-btn {
             padding: 6px; background: rgba(19, 58, 52, 0.7); color: #fff;
             border: 1px solid rgba(0, 255, 204, 0.2); border-radius: 6px;
@@ -123,11 +126,10 @@
         }
         .menu-btn:hover { background: rgba(0, 255, 204, 0.25); border-color: #00ffcc; }
 
-        /* Estilos inputs personalizados */
         .custom-input-group {
             display: flex;
             gap: 4px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .custom-input {
             width: 65%;
@@ -140,24 +142,22 @@
             font-size: 12px;
             outline: none;
         }
-        .custom-input:focus {
-            border-color: #00ffcc;
-        }
+        .custom-input:focus { border-color: #00ffcc; }
         .btn-apply {
-            width: 35%;
-            padding: 5px;
-            background: #133a34;
-            border: 1px solid #00ffcc;
-            border-radius: 6px;
-            color: #fff;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
+            width: 35%; padding: 5px; background: #133a34; border: 1px solid #00ffcc;
+            border-radius: 6px; color: #fff; font-size: 11px; font-weight: bold; cursor: pointer;
         }
-        .btn-apply:hover {
-            background: #00ffcc;
-            color: #04060a;
+        .btn-apply:hover { background: #00ffcc; color: #04060a; }
+
+        /* Estilos de las estadísticas extendidas */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+            color: #cbd5e1;
+            font-size: 12px;
         }
+        .stats-row span { color: #94a3b8; }
 
         #panel-criatura {
             position: absolute;
@@ -192,7 +192,7 @@
 
 <div id="container">
     <div id="screen-menu" class="screen">
-        <h1>CREATURARES LIFE SIMULATOR</h1>
+        <h1>QUANTUM ECOSYSTEM</h1>
         <div class="btn" onclick="cambiarEstado('GAME')">JUGAR</div>
         <div class="btn" onclick="cambiarEstado('OPTIONS')">OPCIONES</div>
         <div class="btn" onclick="window.close()">SALIR</div>
@@ -212,7 +212,7 @@
     <div id="pausa-indicator" class="hidden">// PAUSA</div>
 
     <div id="menu-opciones" class="hidden">
-        <h3>CONFIGURACIÓN GLOBAL</h3>
+        <h3>CONTROLES DE POBLACIÓN</h3>
         
         <div class="hud-counter" id="count-label">Criaturas: --</div>
         <div class="grid-buttons">
@@ -232,6 +232,20 @@
         <div class="custom-input-group">
             <input type="number" id="input-bushes" class="custom-input" placeholder="Cant. exacta..." min="0">
             <button class="btn-apply" onclick="aplicarArbustosExactas()">Aplicar</button>
+        </div>
+
+        <h3>DISTRIBUCIÓN DE GÉNEROS</h3>
+        <div class="stats-row"><span>Machos (Azul):</span> <b id="stat-machos" style="color: #00d9ff;">0</b></div>
+        <div class="stats-row"><span>Hembras (Rosa):</span> <b id="stat-hembras" style="color: #ff4da6;">0</b></div>
+
+        <h3>DEMOGRAFÍA DE PERSONALIDAD</h3>
+        <div class="stats-row"><span>Tranquilos:</span> <b id="stat-tranquilos">0</b></div>
+        <div class="stats-row"><span>Juguetones:</span> <b id="stat-juguetones">0</b></div>
+        <div class="stats-row"><span>Románticos:</span> <b id="stat-romanticos" style="color: #ff3366;">0</b></div>
+        <div class="stats-row"><span>Obsesivos:</span> <b id="stat-obsesivos">0</b></div>
+        
+        <div style="font-size: 10px; color: #64748b; margin-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px; text-align: center;">
+            Presiona [P] Pausa | [O] Cerrar Menú | [R] Reiniciar
         </div>
     </div>
 
@@ -519,13 +533,12 @@
         else if(estado === "GAME") initSimulation();
     }
 
-    // NUEVAS FUNCIONES DE ENTRADA PERSONALIZADA
     function aplicarCriaturasExactas() {
         let val = parseInt(document.getElementById("input-creatures").value);
         if(!isNaN(val) && val >= 0) {
             let diff = val - creatures.length;
             ajustarCriaturas(diff);
-            document.getElementById("input-creatures").value = ""; // Limpiar input
+            document.getElementById("input-creatures").value = ""; 
         }
     }
 
@@ -534,7 +547,7 @@
         if(!isNaN(val) && val >= 0) {
             let diff = val - bushes.length;
             ajustarArbustos(diff);
-            document.getElementById("input-bushes").value = ""; // Limpiar input
+            document.getElementById("input-bushes").value = ""; 
         }
     }
 
@@ -562,9 +575,29 @@
         }
     }
 
+    // NUEVA FUNCIÓN: Cuenta y actualiza todos los datos del menú demográfico extendido
     function actualizarLabels() {
-        document.getElementById("count-label").innerText = `Criaturas: ${creatures.length}`;
-        document.getElementById("bush-label").innerText = `Arbustos: ${bushes.length}`;
+        document.getElementById("count-label").innerText = `Criaturas Totales: ${creatures.length}`;
+        document.getElementById("bush-label").innerText = `Arbustos Totales: ${bushes.length}`;
+
+        let machos = 0, hembras = 0;
+        let tranquilo = 0, jugueton = 0, romantico = 0, obsesivo = 0;
+
+        for (let c of creatures) {
+            if (c.gender === "Macho") machos++; else hembras++;
+            
+            if (c.personality === "Tranquilo") tranquilo++;
+            else if (c.personality === "Juguetón") jugueton++;
+            else if (c.personality === "Romántico") romantico++;
+            else if (c.personality === "Obsesivo") obsesivo++;
+        }
+
+        document.getElementById("stat-machos").innerText = machos;
+        document.getElementById("stat-hembras").innerText = hembras;
+        document.getElementById("stat-tranquilos").innerText = tranquilo;
+        document.getElementById("stat-juguetones").innerText = jugueton;
+        document.getElementById("stat-romanticos").innerText = romantico;
+        document.getElementById("stat-obsesivos").innerText = obsesivo;
     }
 
     function formatearTiempo(segundos) {
@@ -574,8 +607,13 @@
     }
 
     window.addEventListener("keydown", (e) => {
-        // Bloquear atajos globales si se está escribiendo en los inputs
         if(document.activeElement.tagName === "INPUT") return;
+
+        // NUEVO ATRAJO 'R' PARA REINICIAR
+        if(e.key.toLowerCase() === 'r') {
+            initSimulation();
+            return;
+        }
 
         if(currentState !== "GAME" || isPurging) return;
         if(e.key.toLowerCase() === 'p') {
@@ -646,6 +684,7 @@
                     return true;
                 });
                 if(purgeY <= 0) isPurging = false;
+                actualizarLabels(); // Mantener estadísticas al día durante la purga
             } 
             else if(!paused) {
                 gameTime += dt;
